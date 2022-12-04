@@ -5,7 +5,7 @@
  * Authors:	Thomas Graf <tgraf@suug.ch>
  *
  * ==========================================================================
- * 
+ *
  *   Implements a linear-time string-matching algorithm due to Knuth,
  *   Morris, and Pratt [1]. Their algorithm avoids the explicit
  *   computation of the transition function DELTA altogether. Its
@@ -72,17 +72,14 @@ static unsigned int kmp_find(struct ts_config *conf, struct ts_state *state)
 }
 
 static inline void compute_prefix_tbl(const u8 *pattern, unsigned int len,
-				      unsigned int *prefix_tbl, int flags)
+				      unsigned int *prefix_tbl)
 {
 	unsigned int k, q;
-	const u8 icase = flags & TS_IGNORECASE;
 
 	for (k = 0, q = 1; q < len; q++) {
-		while (k > 0 && (icase ? toupper(pattern[k]) : pattern[k])
-		    != (icase ? toupper(pattern[q]) : pattern[q]))
+		while (k > 0 && pattern[k] != pattern[q])
 			k = prefix_tbl[k-1];
-		if ((icase ? toupper(pattern[k]) : pattern[k])
-		    == (icase ? toupper(pattern[q]) : pattern[q]))
+		if (pattern[k] == pattern[q])
 			k++;
 		prefix_tbl[q] = k;
 	}
@@ -104,13 +101,13 @@ static struct ts_config *kmp_init(const void *pattern, unsigned int len,
 	conf->flags = flags;
 	kmp = ts_config_priv(conf);
 	kmp->pattern_len = len;
-	compute_prefix_tbl(pattern, len, kmp->prefix_tbl, flags);
 	kmp->pattern = (u8 *) kmp->prefix_tbl + prefix_tbl_len;
 	if (flags & TS_IGNORECASE)
 		for (i = 0; i < len; i++)
 			kmp->pattern[i] = toupper(((u8 *)pattern)[i]);
 	else
 		memcpy(kmp->pattern, pattern, len);
+	compute_prefix_tbl(kmp->pattern, len, kmp->prefix_tbl);
 
 	return conf;
 }
